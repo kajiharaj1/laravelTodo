@@ -13,7 +13,7 @@ class TodoController extends Controller
      */
     public function index()
     {
-        //
+        return view('todos');
     }
 
     /**
@@ -34,7 +34,10 @@ class TodoController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'newTodo'       => 'required|max:100',
+            'newDeadline'   => 'nullable|after:"now"',
+        ]);
     }
 
     /**
