@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Todo;
+use Brian2694\Toastr\Facades\Toastr;
 
 class TodoController extends Controller
 {
@@ -13,7 +15,12 @@ class TodoController extends Controller
      */
     public function index()
     {
-        return view('todos');
+        // 期限が近いものから順に表示する、期限がないものは最後に持っていく
+        $todos = Todo::orderByRaw('`deadline` IS NULL ASC')->orderBy('deadline')->get();
+
+        return view('todos.index', [
+            'todos' => $todos,
+        ]);
     }
 
     /**
@@ -38,6 +45,17 @@ class TodoController extends Controller
             'newTodo'       => 'required|max:100',
             'newDeadline'   => 'nullable|after:"now"',
         ]);
+
+        // DBに保存
+        Todo::create([
+            'todo'      => $request->newTodo,
+            'deadline'  => $request->newDeadline,
+        ]);
+
+        // フラッシュメッセージ
+        Toastr::success('新しいタスクが追加されました！', 'Success');
+
+        return redirect()->route('todos.index');
     }
 
     /**
@@ -59,7 +77,11 @@ class TodoController extends Controller
      */
     public function edit($id)
     {
-        //
+        $todo = Todo::find($id);
+
+        return view('todos.edit', [
+            'todo' => $todo,
+        ]);
     }
 
     /**
@@ -71,7 +93,20 @@ class TodoController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $request->validate([
+            'updateTodo'        => 'required|max:100',
+            'updateDeadline'    => 'nullable|after:"now"',
+        ]);
+
+        $todo = Todo::find($id);
+        $todo->todo         = $request->updateTodo;
+        $todo->deadline     = $request->updateDeadline;
+        $todo->save();
+
+        // フラッシュメッセージ
+        Toastr::success('タスクが変更されました！', 'Success');
+
+        return redirect()->route('todos.index');
     }
 
     /**
@@ -82,6 +117,12 @@ class TodoController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $todo = Todo::find($id);
+        $todo->delete();
+
+        // フラッシュメッセージ
+        Toastr::success('タスクが削除されました！', 'Success');
+        
+        return redirect()->route('todos.index');
     }
 }
